@@ -18,6 +18,52 @@ resource "aws_iam_role_policy_attachment" "exec" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+resource "aws_cloudwatch_log_group" "app" {
+  name              = "/ecs/${var.group_name}"
+  retention_in_days = 7
+}
+
+# You built this last week. Reference it, do not recreate it.
+data "aws_ecr_repository" "app" {
+  name = "task-tracker"
+}
+
+resource "aws_ecs_task_definition" "web" {
+  family                   = "${var.group_name}-task-tracker"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = 256 # 0.25 vCPU
+  memory                   = 512 # 0.5 GB
+  execution_role_arn       = aws_iam_role.exec.arn
+
+  container_definitions = jsonencode([{
+    name      = "web"
+    image     = "${data.aws_ecr_repository.app.repository_url}:${var.image_tag}"
+    essential = true
+
+    portMappings = [{
+      containerPort = var.container_port
+      protocol      = "tcp"
+    }]
+
+    environment = [
+      { name = "APP_VERSION", value = var.image_tag },
+      { name  = "DATABASE_URL",
+        value = "postgresql://tasks:${var.db_password}@${aws_db_instance.tasks.address}:5432/tasks"
+      }
+    ]
+
+    logConfiguration = {
+      logDriver = "awslogs"
+      options = {
+        "awslogs-group"         = aws_cloudwatch_log_group.app.name
+        "awslogs-region"        = var.region
+        "awslogs-stream-prefix" = "ecs"
+      }
+    }
+  }])
+}
+
 resource "aws_ecs_cluster" "main" {
   name = "${var.group_name}-cluster"
 }
