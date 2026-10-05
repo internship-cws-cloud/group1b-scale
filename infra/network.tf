@@ -1,0 +1,12 @@
+# "the default VPC in whichever account I am pointed at"
+data "aws_vpc" "default" {
+  default = true
+}
+
+# "every subnet in that VPC"
+data "aws_subnets" "default" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
+}
