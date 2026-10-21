@@ -15,7 +15,7 @@ provider "aws" {
 
 variable "region" { type = string }
 variable "group_name" { type = string }
-variable "github_org" { type = string }  # JoeXCode
+variable "github_org" { type = string }  # In
 variable "github_repo" { type = string } # group1a-scale
 
 # your own account number, looked up rather than typed
@@ -67,7 +67,10 @@ resource "aws_iam_openid_connect_provider" "github" {
 }
 
 locals {
-  repo = "${var.github_org}@76786894/${var.github_repo}@1407061241"
+  repo = "${var.github_org}@328541269/${var.github_repo}@1367829463"
+  # Use the below link to get the repo id and org id
+  # https://api.github.com/orgs/internship-cws-cloud
+  # https://api.github.com/repos/internship-cws-cloud/group1b-scale
 }
 
 data "aws_iam_policy_document" "plan_trust" {
