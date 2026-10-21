@@ -9,7 +9,7 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "group1b-tfstate-565122144736"
+    bucket         = "groub1b-tfstate-598886663596"
     key            = "infra/terraform.tfstate"
     region         = "eu-west-1"
     dynamodb_table = "group1b-tflock"
