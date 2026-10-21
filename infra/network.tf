@@ -1,9 +1,9 @@
-# Look up the default VPC in your active AWS account
+# "the default VPC in whichever account I am pointed at"
 data "aws_vpc" "default" {
   default = true
 }
 
-# Look up all subnets inside that default VPC
+# "every subnet in that VPC"
 data "aws_subnets" "default" {
   filter {
     name   = "vpc-id"

@@ -1,5 +1,5 @@
 terraform {
-  required_version = "~> 1.16"
+  required_version = "~> 1.16.4"
 
   required_providers {
     aws = {
@@ -23,7 +23,7 @@ provider "aws" {
   default_tags {
     tags = {
       Group     = var.group_name
-      Programme = "cloud-internship"
+      Programme = "Thrive-cloud-internship"
       ManagedBy = "terraform"
     }
   }

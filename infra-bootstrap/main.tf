@@ -15,8 +15,8 @@ provider "aws" {
 
 variable "region" { type = string }
 variable "group_name" { type = string }
-variable "github_org" { type = string }  # internship-cws-cloud
-variable "github_repo" { type = string } # group1b-scale
+variable "github_org" { type = string }  # JoeXCode
+variable "github_repo" { type = string } # group1a-scale
 
 # your own account number, looked up rather than typed
 data "aws_caller_identity" "me" {}

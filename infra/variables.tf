@@ -1,16 +1,16 @@
 variable "region" {
-  description = "AWS region for all resources"
+  description = "AWS region. Everyone in the cohort uses the same one."
   type        = string
-  default     = "eu-west-1"
 }
 
 variable "group_name" {
-  description = "Short group prefix used for AWS resource names (e.g. group1a)"
+  description = "Short group name, used as a prefix on every resource"
   type        = string
+  # keep it short - some AWS names have a 32 character limit
 }
 
 variable "image_tag" {
-  description = "ECR Docker image tag to deploy"
+  description = "Which image tag in ECR to deploy"
   type        = string
   default     = "v1"
 }
@@ -20,8 +20,8 @@ variable "container_port" {
   default = 8080
 }
 
-variable "db_password" {
-  description = "Database master password"
+variable "db_password" { #openssl rand -base64 48 | tr -d '/@": ' | cut -c 1-24
+  description = "Database password. Comes from terraform.tfvars, never from here."
   type        = string
   sensitive   = true
 }
