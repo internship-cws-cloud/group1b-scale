@@ -1,6 +1,6 @@
 output "app_url" {
   description = "Open this in a browser"
-  value       = "http://${aws_lb.app.dns_name}"
+  value       = "http://${aws_lb.web.dns_name}"
 }
 
 output "db_endpoint" {
