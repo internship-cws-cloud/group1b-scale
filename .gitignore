@@ -6,6 +6,7 @@
 # Variable files carry account IDs, passwords and emails.
 *.tfvars
 *.tfvars.json
+!infra/ci.tfvars
 !example.tfvars
 
 # Local environment and keys
