@@ -16,6 +16,8 @@ resource "aws_lb_target_group" "web" {
   # fails in a way that looks like a health check problem.
   target_type = "ip"
 
+  deregistration_delay = 30
+
   health_check {
     path                = "/health"
     matcher             = "200"
