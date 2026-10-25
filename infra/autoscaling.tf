@@ -9,8 +9,9 @@ resource "aws_appautoscaling_target" "web" {
 }
 
 resource "aws_appautoscaling_policy" "requests" {
-  name               = "${var.group_name}-scale-on-requests"
-  policy_type        = "TargetTrackingScaling"
+  name        = "${var.group_name}-scale-on-requests"
+  policy_type = "TargetTrackingScaling"
+
   resource_id        = aws_appautoscaling_target.web.resource_id
   scalable_dimension = aws_appautoscaling_target.web.scalable_dimension
   service_namespace  = aws_appautoscaling_target.web.service_namespace
@@ -23,10 +24,7 @@ resource "aws_appautoscaling_policy" "requests" {
     predefined_metric_specification {
       predefined_metric_type = "ALBRequestCountPerTarget"
 
-      resource_label = join("/", [
-        split("/", aws_lb.web.arn_suffix)[1],
-        aws_lb_target_group.web.arn_suffix
-      ])
+      resource_label = "${aws_lb.web.arn_suffix}/${aws_lb_target_group.web.arn_suffix}"
     }
   }
 }
