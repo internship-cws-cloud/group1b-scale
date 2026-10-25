@@ -25,3 +25,9 @@ variable "db_password" { #openssl rand -base64 48 | tr -d '/@": ' | cut -c 1-24
   type        = string
   sensitive   = true
 }
+
+variable "desired_count" { # How many containers the service will run
+  description = "Desired number of ECS tasks"
+  type        = number
+  default     = 2
+}

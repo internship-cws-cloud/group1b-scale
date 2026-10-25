@@ -72,7 +72,7 @@ resource "aws_ecs_service" "web" {
   name            = "${var.group_name}-svc"
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.web.arn
-  desired_count   = 1
+  desired_count   = var.desired_count
   launch_type     = "FARGATE"
 
   network_configuration {
