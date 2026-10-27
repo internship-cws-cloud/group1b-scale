@@ -11,7 +11,7 @@ resource "aws_ecs_service" "web" {
   cluster         = aws_ecs_cluster.app.id
   task_definition = aws_ecs_task_definition.web.arn
 
-  desired_count = 1
+  desired_count = 2
   launch_type   = "FARGATE"
 
   network_configuration {
