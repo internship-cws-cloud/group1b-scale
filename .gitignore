@@ -27,3 +27,4 @@ venv/
 
 # Terraform saved plans
 *.tfplan
+!infra/ci.tfvars
