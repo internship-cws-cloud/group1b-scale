@@ -9,7 +9,7 @@ resource "aws_db_instance" "tasks" {
   engine         = "postgres"
   engine_version = "16"
 
-  # the smallest and cheapest that exists. Do not change this.
+  # The smallest instance class used by this project.
   instance_class    = "db.t4g.micro"
   allocated_storage = 20
 
@@ -20,11 +20,11 @@ resource "aws_db_instance" "tasks" {
   db_subnet_group_name   = aws_db_subnet_group.db.name
   vpc_security_group_ids = [aws_security_group.db.id]
 
-  # not reachable from the internet, only from inside the VPC
+  # Not reachable from the internet; access is controlled by the VPC.
   publicly_accessible = false
   multi_az            = false
 
-  # week 3 only. The Recover it groups will change both of these.
+  # Current project configuration.
   backup_retention_period = 0
   skip_final_snapshot     = true
 }

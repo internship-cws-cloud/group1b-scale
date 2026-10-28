@@ -24,7 +24,7 @@ resource "aws_appautoscaling_policy" "requests" {
     predefined_metric_specification {
       predefined_metric_type = "ALBRequestCountPerTarget"
 
-      resource_label = "${aws_lb.web.arn_suffix}/${aws_lb_target_group.web.arn_suffix}"
+      resource_label = "${aws_lb.app.arn_suffix}/${aws_lb_target_group.app.arn_suffix}"
     }
   }
 }

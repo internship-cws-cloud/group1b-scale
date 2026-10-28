@@ -1,40 +1,48 @@
-resource "aws_lb" "web" {
+resource "aws_lb" "app" {
   name               = "${var.group_name}-alb"
-  load_balancer_type = "application"
   internal           = false
-  subnets            = data.aws_subnets.default.ids
-  security_groups    = [aws_security_group.alb.id]
+  load_balancer_type = "application"
+
+  security_groups = [aws_security_group.alb.id]
+  subnets         = data.aws_subnets.default.ids
+
+  tags = {
+    Name = "${var.group_name}-alb"
+  }
 }
 
-resource "aws_lb_target_group" "web" {
-  name     = "${var.group_name}-tg"
-  port     = var.container_port
-  protocol = "HTTP"
-  vpc_id   = data.aws_vpc.default.id
-
-  # MUST be "ip" for Fargate. "instance" is the default and it
-  # fails in a way that looks like a health check problem.
-  target_type = "ip"
-
+resource "aws_lb_target_group" "app" {
+  name                 = "${var.group_name}-tg"
+  port                 = var.container_port
+  protocol             = "HTTP"
+  target_type          = "ip"
+  vpc_id               = data.aws_vpc.default.id
   deregistration_delay = 30
 
   health_check {
+    enabled             = true
     path                = "/health"
-    matcher             = "200"
-    interval            = 15
-    timeout             = 5
+    protocol            = "HTTP"
+    port                = "traffic-port"
     healthy_threshold   = 2
     unhealthy_threshold = 3
+    timeout             = 5
+    interval            = 15
+    matcher             = "200"
+  }
+
+  tags = {
+    Name = "${var.group_name}-tg"
   }
 }
 
 resource "aws_lb_listener" "http" {
-  load_balancer_arn = aws_lb.web.arn
+  load_balancer_arn = aws_lb.app.arn
   port              = 80
   protocol          = "HTTP"
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.web.arn
+    target_group_arn = aws_lb_target_group.app.arn
   }
 }

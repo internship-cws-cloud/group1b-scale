@@ -6,7 +6,7 @@ variable "region" {
 variable "group_name" {
   description = "Short group name, used as a prefix on every resource"
   type        = string
-  # keep it short - some AWS names have a 32 character limit
+  # Keep it short - some AWS names have a 32 character limit
 }
 
 variable "image_tag" {
@@ -20,13 +20,13 @@ variable "container_port" {
   default = 8080
 }
 
-variable "db_password" { #openssl rand -base64 48 | tr -d '/@": ' | cut -c 1-24
+variable "db_password" {
   description = "Database password. Comes from terraform.tfvars, never from here."
   type        = string
   sensitive   = true
 }
 
-variable "desired_count" { # How many containers the service will run
+variable "desired_count" {
   description = "Desired number of ECS tasks"
   type        = number
   default     = 2
