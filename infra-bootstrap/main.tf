@@ -1,4 +1,3 @@
-
 terraform {
   required_version = "~> 1.9"
 
@@ -103,11 +102,9 @@ locals {
   repo = "${var.github_org}/${var.github_repo}"
 }
 
-
 data "aws_iam_policy_document" "deploy_trust" {
   statement {
-    effect = "Allow"
-
+    effect  = "Allow"
     actions = ["sts:AssumeRoleWithWebIdentity"]
 
     principals {
@@ -171,4 +168,14 @@ resource "aws_iam_role" "plan" {
 resource "aws_iam_role_policy_attachment" "plan_readonly" {
   role       = aws_iam_role.plan.name
   policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
+}
+
+output "plan_role_arn" {
+  description = "ARN for the GitHub Actions Terraform plan role"
+  value       = aws_iam_role.plan.arn
+}
+
+output "deploy_role_arn" {
+  description = "ARN for the GitHub Actions Terraform deploy role"
+  value       = aws_iam_role.deploy.arn
 }

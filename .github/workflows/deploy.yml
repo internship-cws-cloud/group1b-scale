@@ -9,7 +9,6 @@ permissions:
   id-token: write
   contents: read
 
-# Prevent two deployments from running at the same time.
 concurrency:
   group: deploy-main
   cancel-in-progress: false

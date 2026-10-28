@@ -46,6 +46,8 @@ jobs:
       - name: Validate Terraform
         run: terraform validate
 
+      # -lock=false because the plan role is read-only and cannot
+      # write a lock row. Safe here: a plan changes nothing.
       - name: Generate Terraform plan
         run: |
           terraform plan -no-color -lock=false \
