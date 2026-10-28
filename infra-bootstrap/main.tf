@@ -99,7 +99,7 @@ resource "aws_iam_openid_connect_provider" "github" {
 }
 
 locals {
-  repo = "${var.github_org}/${var.github_repo}"
+  repo = "${var.github_org}@328541269/${var.github_repo}@1367829463"
 }
 
 data "aws_iam_policy_document" "deploy_trust" {
@@ -168,14 +168,4 @@ resource "aws_iam_role" "plan" {
 resource "aws_iam_role_policy_attachment" "plan_readonly" {
   role       = aws_iam_role.plan.name
   policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
-}
-
-output "plan_role_arn" {
-  description = "ARN for the GitHub Actions Terraform plan role"
-  value       = aws_iam_role.plan.arn
-}
-
-output "deploy_role_arn" {
-  description = "ARN for the GitHub Actions Terraform deploy role"
-  value       = aws_iam_role.deploy.arn
 }
