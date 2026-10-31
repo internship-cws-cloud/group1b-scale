@@ -28,3 +28,4 @@ provider "aws" {
     }
   }
 }
+# For git push to run
