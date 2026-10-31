@@ -28,5 +28,4 @@ provider "aws" {
     }
   }
 }
-
-# testing
+# For git push to run
