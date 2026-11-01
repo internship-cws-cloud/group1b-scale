@@ -77,6 +77,14 @@ resource "aws_ecs_service" "web" {
 
   health_check_grace_period_seconds = 60
 
+  deployment_minimum_healthy_percent = 100
+  deployment_maximum_percent         = 200
+
+  deployment_circuit_breaker {
+    enable   = true
+    rollback = true
+  }
+
   network_configuration {
     subnets          = data.aws_subnets.default.ids
     security_groups  = [aws_security_group.app.id]
