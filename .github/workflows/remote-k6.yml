@@ -1,0 +1,197 @@
+name: Remote k6 Performance Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      vus:
+        description: "Number of virtual users"
+        required: true
+        type: choice
+        options:
+          - "10"
+          - "20"
+          - "40"
+          - "60"
+        default: "20"
+
+      duration:
+        description: "Load test duration"
+        required: true
+        type: choice
+        options:
+          - "3m"
+          - "5m"
+          - "10m"
+        default: "5m"
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: group1b-remote-k6
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: eu-west-1
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+  LOAD_TEST_TARGET_URL: ${{ vars.LOAD_TEST_TARGET_URL }}
+
+jobs:
+  remote-load-test:
+    name: Run k6 in AWS eu-west-1
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+
+      - name: Check configuration
+        run: |
+          if [ -z "$LOAD_TEST_TARGET_URL" ]; then
+            echo "LOAD_TEST_TARGET_URL is not configured."
+            exit 1
+          fi
+
+      - name: Terraform Init
+        id: init
+        working-directory: load-generator
+        run: terraform init -input=false
+
+      - name: Create EC2 load generator
+        id: create
+        working-directory: load-generator
+        run: |
+          terraform apply \
+            -input=false \
+            -auto-approve \
+            -var="target_url=$LOAD_TEST_TARGET_URL"
+
+          INSTANCE_ID=$(terraform output -raw instance_id)
+
+          echo "instance_id=$INSTANCE_ID" >> "$GITHUB_OUTPUT"
+
+          echo "Created load generator: $INSTANCE_ID"
+
+      - name: Wait for EC2 to register with SSM
+        env:
+          INSTANCE_ID: ${{ steps.create.outputs.instance_id }}
+        run: |
+          echo "Waiting for SSM registration..."
+
+          for attempt in $(seq 1 40); do
+
+            STATUS=$(aws ssm describe-instance-information \
+              --filters "Key=InstanceIds,Values=$INSTANCE_ID" \
+              --query 'InstanceInformationList[0].PingStatus' \
+              --output text 2>/dev/null || true)
+
+            echo "SSM status: $STATUS"
+
+            if [ "$STATUS" = "Online" ]; then
+              echo "Instance is online in SSM."
+              exit 0
+            fi
+
+            sleep 15
+
+          done
+
+          echo "Instance did not become available in SSM."
+          exit 1
+
+      - name: Run remote k6 test
+        env:
+          INSTANCE_ID: ${{ steps.create.outputs.instance_id }}
+          VUS: ${{ inputs.vus }}
+          DURATION: ${{ inputs.duration }}
+        run: |
+          set -euo pipefail
+
+          REMOTE_COMMAND="cloud-init status --wait && sudo k6 run -e TARGET='$LOAD_TEST_TARGET_URL' -e VUS='$VUS' -e DURATION='$DURATION' --summary-export=/tmp/k6-summary.json /opt/loadtest/experiment.js; rc=\$?; echo '--- K6 SUMMARY JSON ---'; sudo cat /tmp/k6-summary.json || true; exit \$rc"
+
+          PARAMETERS=$(jq -n \
+            --arg command "$REMOTE_COMMAND" \
+            '{commands: [$command]}')
+
+          COMMAND_ID=$(aws ssm send-command \
+            --instance-ids "$INSTANCE_ID" \
+            --document-name "AWS-RunShellScript" \
+            --comment "Group 1B remote k6 performance test" \
+            --parameters "$PARAMETERS" \
+            --query 'Command.CommandId' \
+            --output text)
+
+          echo "SSM command: $COMMAND_ID"
+
+          echo "Waiting for k6 to finish..."
+
+          STATUS="Pending"
+
+          for attempt in $(seq 1 120); do
+
+            STATUS=$(aws ssm get-command-invocation \
+              --command-id "$COMMAND_ID" \
+              --instance-id "$INSTANCE_ID" \
+              --query 'Status' \
+              --output text 2>/dev/null || echo "Pending")
+
+            echo "Test status: $STATUS"
+
+            case "$STATUS" in
+              Success|Failed|TimedOut|Cancelled)
+                break
+                ;;
+            esac
+
+            sleep 10
+          done
+
+          aws ssm get-command-invocation \
+            --command-id "$COMMAND_ID" \
+            --instance-id "$INSTANCE_ID" \
+            --query '{
+              Status:Status,
+              ExitCode:ResponseCode,
+              Stdout:StandardOutputContent,
+              Stderr:StandardErrorContent
+            }' \
+            --output json > k6-results.json
+
+          cat k6-results.json
+
+          if [ "$STATUS" != "Success" ]; then
+            echo "The remote k6 test did not complete successfully."
+            exit 1
+          fi
+
+      - name: Destroy temporary load generator
+        if: always() && steps.init.outcome == 'success'
+        continue-on-error: true
+        working-directory: load-generator
+        run: |
+          terraform destroy \
+            -input=false \
+            -auto-approve \
+            -var="target_url=$LOAD_TEST_TARGET_URL"
+
+      - name: Upload k6 results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: group1b-k6-results-${{ github.run_number }}
+          path: k6-results.json
+          if-no-files-found: warn
+          retention-days: 14
